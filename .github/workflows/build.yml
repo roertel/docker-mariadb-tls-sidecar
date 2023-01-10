@@ -22,12 +22,12 @@ jobs:
         name: Checkout source
         uses: actions/checkout@v2.5.0
       -
-        name: Set Docker metadata
+        name: Set image metadata
         id: meta
         uses: docker/metadata-action@v4.1.1
         with:
           # list of Docker images to use as base name for tags
-          images: ${{ github.GITHUB_REPOSITORY }}
+          images: ${{ github.repository }}
           # generate Docker tags based on the following events/attributes
           tags: |
             type=raw,value=unstable
@@ -51,9 +51,9 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
-            VCS_URL=${{ github.GITHUB_SERVER_URL }}/${{ github.GITHUB_REPOSITORY }}
+            VCS_URL=${{ github.GITHUB_SERVER_URL }}/${{ github.repository }}
             VCS_REF=${{ github.GITHUB_SHA }}
             BUILD_DATE=${{ github.event.repository.updated_at}}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ github.GITHUB_REPOSITORY}}:buildcache
-          cache-to: type=registry,ref=${{ github.GITHUB_REPOSITORY }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ github.repository}}:buildcache
+          cache-to: type=registry,ref=${{ github.repository }}:buildcache,mode=max
