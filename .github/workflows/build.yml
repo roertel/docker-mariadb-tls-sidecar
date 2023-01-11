@@ -58,5 +58,5 @@ jobs:
             VCS_REF=${{ github.GITHUB_SHA }}
             BUILD_DATE=${{ github.event.repository.updated_at}}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ github.repository}}:buildcache
-          cache-to: type=registry,ref=${{ github.repository }}:buildcache,mode=max
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository}}:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max
