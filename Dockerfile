@@ -23,5 +23,5 @@ RUN export DEBIAN_FRONTEND=noninteractive \
 
 ENV HOME /home
 USER nslcd
-VOLUME ["/templates", "/run/nslcd", "/run/secrets", "/run/tls"]
+VOLUME ["/templates", "/run/nslcd", "/run/credentials", "/run/tls"]
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

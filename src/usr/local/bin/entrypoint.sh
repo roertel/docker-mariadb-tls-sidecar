@@ -6,8 +6,8 @@ if [ "$DEBUG" = 'true' ]; then
 fi
 
 # Load secrets into env vars for building config
-if [ -r /run/secrets/ldap-bindpw ]; then
-   export LDAP_BINDPW="$(cat /run/secrets/ldap-bindpw)"
+if [ -r /run/credentials/ldap-bindpw ]; then
+   export LDAP_BINDPW="$(cat /run/credentials/ldap-bindpw)"
 fi
 
 # Create config from template
