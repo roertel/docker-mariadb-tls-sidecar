@@ -1,25 +1,120 @@
 #!/usr/bin/env bash
+#
+# Updates certificates when they're renewed. 
+#
 set -e
 
-if [ "$DEBUG" = 'true' ]; then
-  set -x
-fi
+declare -A LOGLEVELS
+LOGLEVELS[FATAL]=0
+LOGLEVELS[ERROR]=1
+LOGLEVELS[WARN]=2
+LOGLEVELS[INFO]=3
+LOGLEVELS[DEBUG]=4
+LOGLEVELS[TRACE]=5
 
-# Load secrets into env vars for building config
-if [ -r /run/credentials/ldap-bindpw ]; then
-   export LDAP_BINDPW="$(cat /run/credentials/ldap-bindpw)"
-fi
+LOGNAME=$(basename $0)
+LOGLEVEL=${LOGLEVEL:-3} # default to INFO
+RENEWWINDOW="${RENEWWINDOW:-3300}"  # How many seconds before expiration to start watching for renwal
+test ${LOGLEVEL} -ge ${LOGLEVELS[DEBUG]} && set -x
 
-# Create config from template
-if [ -r /templates/nslcd.conf.tpl ]; then
-   envsubst</templates/nslcd.conf.tpl>/etc/nslcd.conf
-fi
+write_log() { echo "[${LOGNAME}] $@" }
+log_fatal() { test ${LOGLEVEL} -ge ${LOGLEVELS[FATAL]} && write_log "FATAL: $@"; exit 1 }
+log_error() { test ${LOGLEVEL} -ge ${LOGLEVELS[ERROR]} && write_log "ERROR: $@" }
+log_warn()  { test ${LOGLEVEL} -ge ${LOGLEVELS[WARN]}  && write_log "WARN : $@" }
+log_info()  { test ${LOGLEVEL} -ge ${LOGLEVELS[INFO]}  && write_log "INFO : $@" }
+log_debug() { test ${LOGLEVEL} -ge ${LOGLEVELS[DEBUG]} && write_log "DEBUG: $@" }
+log_trace() { test ${LOGLEVEL} -ge ${LOGLEVELS[TRACE]} && write_log "TRACE: $@" }
 
-# If command starts with an option, prepend nslcd.
-# This allows users to start another executable. 
-if [ "${1:0:1}" = '-' ]; then
-   set -- /usr/sbin/nslcd --nofork --debug "$@"
-fi
+loop_wait() {
+   if [ ! -f "${CA_FILE}" ]; then
+      log_error "Certificate CA file missing: ${CA_FILE}. Checking again in 1 minute."
+      continue
+   fi
 
-# Start nslcd
-exec "$@"
+   if [ ! -f "${CRTFILE}" ]; then
+      log_error "Certificate file missing: ${CRTFILE}. Checking again in 1 minute."
+      continue
+   fi
+
+   if [ ! -f "${KEYFILE}" ]; then
+      log_error "Certificate key file missing: ${KEYFILE}. Checking again in 1 minute."
+      continue
+   fi
+
+   # check expiry
+   EXPIRY=$(openssl x509 -noout -enddate -in "${CRTFILE}" | cut -d = -f2)
+   CURRENT_EPOCH=$(date +%s)
+   TARGET_EPOCH=$(date -d "${EXPIRY}" +%s)
+   SLEEP_SECONDS=$(( $TARGET_EPOCH - $CURRENT_EPOCH - ${RENEWWINDOW}))
+
+   if [ $SLEEP_SECONDS -gt 0 ]; then
+      log_info "Waiting until $RENEWWINDOW seconds before $EXPIRY ($SLEEP_SECONDS seconds) to renew the certificates"
+      sleep $SLEEP_SECONDS
+   fi
+}
+
+loop_renew() {
+   log_info "Renewing the certificates"
+
+   until openssl x509 -noout -checkend ${RENEWWINDOW} -in "${CRTFILE}"; do
+      log_debug "Waiting 1 minute for server to generate renewed certificate."
+      sleep 1m
+   done
+
+   log_info "Certificate has been renewed"
+   update_db
+}
+
+update_db() {
+   # It's important that this runs BEFORE the certificate expires or else
+   # there is no way to connect to the database to tell it to reload the
+   # certificates. If that happens, the only option is to restart the pod.
+   mysql --password=$(cat /run/credentials/certmanager) \
+      --execute="ALTER INSTANCE RELOAD TLS"
+}
+
+main() {
+   # Ensure environment variables are set
+   test -n "${CA_FILE}" && log_fatal "Environment variable 'CA_FILE' is not set."
+   test -n "${CRTFILE}" && log_fatal "Environment variable 'CRTFILE' is not set."
+   test -n "${KEYFILE}" && log_fatal "Environment variable 'KEYFILE' is not set."
+
+   while sleep 1m; do
+      loop_wait
+      loop_renew
+   done
+}
+
+usage() {
+   test -n "$@" && echo "$@\n"
+   echo "Usage: $(basename $0) [-h] [-d] [-l LOGLEVEL] -a CA_FILE -c CRT_FILE -k KEY_FILE"
+   echo "Watch certificates, update Mariadb/Mysql when changed."
+   echo "   -h              Display syntax help (this message)"
+   echo "   -d              Increase output messages (up to 5 levels)"
+   echo "   -l LOGLEVEL     Specify logging level (FATAL ERROR WARN INFO DEBUG TRACE)"
+   echo "   -a CA_FILE      Path and filename for Certificate Authority file (required)"
+   echo "   -c CRTFILE      Path and filename for the certificate file (required)"
+   echo "   -k KEYFILE      Path and filename for the certificate key file (required)"
+   echo "   -r RENEWWINDOW  Number of seconds before the certificate is set to"
+   echo "                   expire to start checking for a renewal (default=3300s)"
+   exit 1
+}
+
+while getopts ":hdl:a:c:k:r:" arg; do
+   case "${arg}" in
+      h) usage;;
+      d) LOGLEVEL=$((LOGLEVEL+1));;
+      l) LOGLEVEL=${LOGLEVELS[${OPTARG^^}]:-3};;
+      a) CA_FILE=${OPTARG};;
+      c) CRTFILE=${OPTARG};;
+      k) KEYFILE=${OPTARG};;
+      r) RENEWWINDOW=${OPTARG};;
+      :) usage "Argument -${OPTARG} requires a value.";;
+      *) usage "Invalid option: -${OPTARG}.";;
+   esac
+done
+shift $((OPTIND-1))
+
+main
+log_info "script exited"
+exit 0
