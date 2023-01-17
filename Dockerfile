@@ -12,11 +12,11 @@ LABEL org.label-schema.build-date = ${BUILD_DATE}
 LABEL org.label-schema.vcs-url = ${VCS_URL}
 LABEL org.label-schema.vcs-ref = ${VCS_REF}
 
+COPY src/etc /etc
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install mariadb-client
 
 COPY src /
-
 RUN chmod 0755 /usr/local/bin/*
 
 ENV HOME /home
