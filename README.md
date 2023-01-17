@@ -1,2 +1,2 @@
-# docker-nslcd-sidecar
-NSLCD components in a docker image for use as a sidecar to applications needing LDAP authentication.
+# docker-mariadb-tls-sidecar
+Watches the TLS certificates for changes, then tells Mariadb to refresh them.
