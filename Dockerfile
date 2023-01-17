@@ -12,9 +12,8 @@ LABEL org.label-schema.build-date = ${BUILD_DATE}
 LABEL org.label-schema.vcs-url = ${VCS_URL}
 LABEL org.label-schema.vcs-ref = ${VCS_REF}
 
-RUN export DEBIAN_FRONTEND=noninteractive \
- && apt-get update \
- && apt-get install mariadb-client
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install mariadb-client
 
 COPY src /
 
