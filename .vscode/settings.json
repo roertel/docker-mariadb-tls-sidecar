@@ -3,6 +3,7 @@
         "certmanager",
         "CRTFILE",
         "KEYFILE",
-        "LOGLEVEL"
+        "LOGLEVEL",
+        "RENEWWINDOW"
     ]
 }
