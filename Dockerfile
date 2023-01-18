@@ -17,8 +17,9 @@ RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install mariadb-client
 
 COPY src /
-RUN chmod 0755 /usr/local/bin/*
+RUN chmod 0755 /usr/local/bin/* \
+ && adduser --system connection_admin
 
-ENV HOME /home
-VOLUME ["/run/mysqld", "/run/credentials", "/run/tls", "/home"]
+USER connection_admin
+VOLUME ["/run/mysqld", "/run/credentials", "/run/tls"]
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

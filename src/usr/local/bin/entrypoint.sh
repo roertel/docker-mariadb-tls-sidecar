@@ -16,6 +16,9 @@ LOGNAME=$(basename "$0")
 LOGLEVEL=${LOGLEVEL:-${LOGLEVELS[INFO]}} # default to INFO
 test "${LOGLEVEL}" -ge "${LOGLEVELS[DEBUG]}" && set -x
 RENEWWINDOW="${RENEWWINDOW:-3300}"  # How many seconds before expiration to start watching for renwal
+CA_FILE=${CA_FILE:-/run/tls/ca.crt}
+CRTFILE=${CRTFILE:-/run/tls/tls.crt}
+KEYFILE=${KEYFILE:-/run/tls/tls.key}
 
 write_log() { echo "[${LOGNAME}] " "$@"; }
 log_fatal() { test "${LOGLEVEL}" -ge "${LOGLEVELS[FATAL]}" && write_log "FATAL:" "$@"; exit 1; }
@@ -72,12 +75,15 @@ update_db() {
    # It's important that this runs BEFORE the certificate expires or else
    # there is no way to connect to the database to tell it to reload the
    # certificates. If that happens, the only option is to restart the pod.
+   # This may not be true when connecting via a socket, though. 
    test -n "${DBPASS_FILE}" && DBPASS="$(cat "${DBPASS_FILE}")"
    
    sqlargs=()
-   test -n "${DBUSER}"      && sqlargs+=("--user=\"${DBUSER}\"")
-   test -n "${DBPASS}"      && sqlargs+=("--password=\"${DBPASS}\"")
-
+   test -n "${DBUSER}" && sqlargs+=("--user=\"${DBUSER}\"")
+   test -n "${DBPASS}" && sqlargs+=("--password=\"${DBPASS}\"")
+   test -n "${SERVER}" && sqlargs+=("--host=${SERVER}")
+   test -n "${SOCKET}" && sqlargs+=("--host=${SOCKET}")
+   
    if ! mysql "${sqlargs[@]}" --execute="ALTER INSTANCE RELOAD TLS"; then
       log_error "Failed to update MariaDB with new certificates!"
    fi
@@ -108,13 +114,15 @@ usage() {
    echo "   -k KEYFILE      Path and filename for the certificate key file (required)"
    echo "   -r RENEWWINDOW  Number of seconds before the certificate is set to"
    echo "                   expire to start checking for a renewal (default=3300s)"
+   echo "   -S SOCKET       Unix socket file to use for connections"
+   echo "   -s SERVER       Database host name"
    echo "   -u DBUSER       Database user with CONNECTION_ADMIN privileges"
    echo "   -p DBPASS       Password for DBUSER"
-   echo "   -P DBPASS_FILE  File with password for DBUSER (takes precencence over -p)"
+   echo "   -P DBPASS_FILE  File with password for DBUSER (takes precedence over -p)"
    exit 1
 }
 
-while getopts ":hdl:a:c:k:r:u:p:P:" arg; do
+while getopts ":hdl:a:c:k:r:u:p:P:s:S:" arg; do
    case "${arg}" in
       h) usage;;
       d) LOGLEVEL=$((LOGLEVEL+1));;
@@ -126,6 +134,8 @@ while getopts ":hdl:a:c:k:r:u:p:P:" arg; do
       u) DBUSER=${OPTARG};;
       p) DBPASS=${OPTARG};;
       P) DBPASS_FILE=${OPTARG};;
+      s) SERVER=${OPTARG};;
+      S) SOCKET=${OPTARG};;
       :) usage "Argument -${OPTARG} requires a value.";;
       *) usage "Invalid option: -${OPTARG}.";;
    esac
