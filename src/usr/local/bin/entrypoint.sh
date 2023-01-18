@@ -118,7 +118,7 @@ usage() {
    echo "   -s SERVER       Database host name"
    echo "   -u DBUSER       Database user with CONNECTION_ADMIN privileges"
    echo "   -p DBPASS       Password for DBUSER"
-   echo "   -P DBPASS_FILE  File with password for DBUSER (takes precencence over -p)"
+   echo "   -P DBPASS_FILE  File with password for DBUSER (takes precedence over -p)"
    exit 1
 }
 
