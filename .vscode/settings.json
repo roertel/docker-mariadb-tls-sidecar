@@ -2,6 +2,8 @@
     "cSpell.words": [
         "certmanager",
         "CRTFILE",
+        "DBPASS",
+        "DBUSER",
         "KEYFILE",
         "LOGLEVEL",
         "RENEWWINDOW"

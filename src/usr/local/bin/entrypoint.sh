@@ -107,10 +107,10 @@ usage() {
    echo "   -c CRTFILE      Path and filename for the certificate file (required)"
    echo "   -k KEYFILE      Path and filename for the certificate key file (required)"
    echo "   -r RENEWWINDOW  Number of seconds before the certificate is set to"
+   echo "                   expire to start checking for a renewal (default=3300s)"
    echo "   -u DBUSER       Database user with CONNECTION_ADMIN privileges"
    echo "   -p DBPASS       Password for DBUSER"
    echo "   -P DBPASS_FILE  File with password for DBUSER (takes precencence over -p)"
-   echo "                   expire to start checking for a renewal (default=3300s)"
    exit 1
 }
 
