@@ -9,6 +9,7 @@ certificates. Intended to be used as a sidecar to a MariaDB K8s pod.
 You can execute this container by passing in command line arguments or
 environment variables.
 |Arg|Variable|Default|Description|
+|---|---|---|---|
 |`-h`|||Display syntax help (this message)|
 |`-d`||3|Increase output messages (up to 5 levels)|
 |`-l`|`LOGLEVEL`|INFO|Specify logging level (FATAL ERROR WARN INFO DEBUG TRACE)|
@@ -24,6 +25,7 @@ environment variables.
 
 Certain volumes need to be mounted to work correctly.
 |File|Description|
+|---|---|`
 |/run/mysqld/mysqld.sock|Unix socket file for the database connection|
 |/run/credentials/certmanager|file with password for database user 'certmanager'@'localhost'|
 |/run/tls/ca.crt|Certificate CA (root, intermediate) file|
