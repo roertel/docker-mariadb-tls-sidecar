@@ -91,8 +91,12 @@ update_db() {
 
 main() {
    # Ensure environment is sane
-   test -x "openssl"    || log_fatal "Executable 'openssl' not found."
-   test -x "mysql"      || log_fatal "Executable 'mysql' not found."
+   for DEPENDENCY in openssl mysql sleep test; do
+      if [[ ! -x "$(which "${DEPENDENCY}")" ]]; then
+         log_fatal "Dependency '${DEPENDENCY}' not found."
+      fi
+   done
+
    test -z "${CA_FILE}" && log_fatal "Environment variable 'CA_FILE' is not set."
    test -z "${CRTFILE}" && log_fatal "Environment variable 'CRTFILE' is not set."
    test -z "${KEYFILE}" && log_fatal "Environment variable 'KEYFILE' is not set."
