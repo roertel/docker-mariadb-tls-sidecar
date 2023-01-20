@@ -91,9 +91,9 @@ update_db() {
 
 main() {
    # Ensure environment variables are set
-   test -n "${CA_FILE}" && log_fatal "Environment variable 'CA_FILE' is not set."
-   test -n "${CRTFILE}" && log_fatal "Environment variable 'CRTFILE' is not set."
-   test -n "${KEYFILE}" && log_fatal "Environment variable 'KEYFILE' is not set."
+   test -z "${CA_FILE}" && log_fatal "Environment variable 'CA_FILE' is not set."
+   test -z "${CRTFILE}" && log_fatal "Environment variable 'CRTFILE' is not set."
+   test -z "${KEYFILE}" && log_fatal "Environment variable 'KEYFILE' is not set."
 
    while sleep 1m; do
       if loop_wait; then
