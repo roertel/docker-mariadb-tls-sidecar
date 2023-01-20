@@ -90,11 +90,14 @@ update_db() {
 }
 
 main() {
-   # Ensure environment variables are set
+   # Ensure environment is sane
+   test -x "openssl"    || log_fatal "Executable 'openssl' not found."
+   test -x "mysql"      || log_fatal "Executable 'mysql' not found."
    test -z "${CA_FILE}" && log_fatal "Environment variable 'CA_FILE' is not set."
    test -z "${CRTFILE}" && log_fatal "Environment variable 'CRTFILE' is not set."
    test -z "${KEYFILE}" && log_fatal "Environment variable 'KEYFILE' is not set."
 
+   log_info "Watching for certificate updates"
    while sleep 1m; do
       if loop_wait; then
          loop_renew
