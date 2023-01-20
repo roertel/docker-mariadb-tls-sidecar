@@ -14,7 +14,7 @@ LABEL org.label-schema.vcs-ref = ${VCS_REF}
 
 COPY src/etc /etc
 RUN apt-get update \
- && DEBIAN_FRONTEND=noninteractive apt-get install mariadb-client
+ && DEBIAN_FRONTEND=noninteractive apt-get install mariadb-client openssl
 
 COPY src /
 RUN chmod 0755 /usr/local/bin/* \
