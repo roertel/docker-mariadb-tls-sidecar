@@ -84,7 +84,7 @@ update_db() {
    test -n "${SERVER}" && sqlargs+=("--host=${SERVER}")
    test -n "${SOCKET}" && sqlargs+=("--host=${SOCKET}")
    
-   if ! mysql "${sqlargs[@]}" --execute="ALTER INSTANCE RELOAD TLS"; then
+   if ! mysql "${sqlargs[@]}" --execute="FLUSH TLS"; then
       log_error "Failed to update MariaDB with new certificates!"
    fi
 }
