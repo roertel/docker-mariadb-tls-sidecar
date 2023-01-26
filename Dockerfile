@@ -20,6 +20,6 @@ COPY src /
 RUN chmod 0755 /usr/local/bin/*
 
 USER 999
-HOME /home
+ENV HOME /home
 VOLUME ["/run/mysqld", "/run/credentials", "/run/tls"]
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
