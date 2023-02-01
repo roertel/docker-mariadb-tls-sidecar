@@ -84,17 +84,24 @@ update_db() {
    test -n "${SERVER}" && sqlargs+=("--host=${SERVER}")
    test -n "${SOCKET}" && sqlargs+=("--host=${SOCKET}")
    
-   if ! mysql "${sqlargs[@]}" --execute="ALTER INSTANCE RELOAD TLS"; then
+   if ! mysql "${sqlargs[@]}" --execute="FLUSH SSL"; then
       log_error "Failed to update MariaDB with new certificates!"
    fi
 }
 
 main() {
-   # Ensure environment variables are set
-   test -n "${CA_FILE}" && log_fatal "Environment variable 'CA_FILE' is not set."
-   test -n "${CRTFILE}" && log_fatal "Environment variable 'CRTFILE' is not set."
-   test -n "${KEYFILE}" && log_fatal "Environment variable 'KEYFILE' is not set."
+   # Ensure environment is sane
+   for DEPENDENCY in openssl mysql sleep test; do
+      if [[ ! -x "$(which "${DEPENDENCY}")" ]]; then
+         log_fatal "Dependency '${DEPENDENCY}' not found."
+      fi
+   done
 
+   test -z "${CA_FILE}" && log_fatal "Environment variable 'CA_FILE' is not set."
+   test -z "${CRTFILE}" && log_fatal "Environment variable 'CRTFILE' is not set."
+   test -z "${KEYFILE}" && log_fatal "Environment variable 'KEYFILE' is not set."
+
+   log_info "Watching for certificate updates"
    while sleep 1m; do
       if loop_wait; then
          loop_renew

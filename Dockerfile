@@ -14,12 +14,12 @@ LABEL org.label-schema.vcs-ref = ${VCS_REF}
 
 COPY src/etc /etc
 RUN apt-get update \
- && DEBIAN_FRONTEND=noninteractive apt-get install mariadb-client
+ && DEBIAN_FRONTEND=noninteractive apt-get install mariadb-client openssl
 
 COPY src /
-RUN chmod 0755 /usr/local/bin/* \
- && adduser --system connection_admin
+RUN chmod 0755 /usr/local/bin/*
 
-USER connection_admin
+USER 999
+ENV HOME /home
 VOLUME ["/run/mysqld", "/run/credentials", "/run/tls"]
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
